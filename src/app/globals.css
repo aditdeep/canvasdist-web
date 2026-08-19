@@ -1,26 +1,155 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* --- Color tokens --- */
+  --color-bg: #f3f4f9;
+  --color-surface: #ffffff;
+  --color-ink: #14151a;
+  --color-ink-soft: #6b6f80;
+  --color-ink-faint: #9a9db0;
+
+  --color-primary-1: #5b5ff0;
+  --color-primary-2: #9b6bf2;
+  --color-accent-gold: #d9a441;
+  --color-success: #12b886;
+  --color-warning: #f2994a;
+  --color-danger: #f0554d;
+
+  --glass-fill: rgba(255, 255, 255, 0.55);
+  --glass-fill-strong: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.65);
+  --glass-shadow: 0 8px 32px rgba(30, 30, 60, 0.10), 0 1.5px 4px rgba(30, 30, 60, 0.06);
+
+  --radius-lg: 28px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+
+  --font-display: var(--font-manrope), "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: var(--font-inter), "SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: var(--font-jbmono), "SF Mono", ui-monospace, monospace;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-ink);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Ambient mesh background: soft indigo/violet/gold blobs, fixed --- */
+.mesh-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.mesh-bg::before,
+.mesh-bg::after,
+.mesh-bg .blob-3 {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.55;
+}
+
+.mesh-bg::before {
+  width: 46vw;
+  height: 46vw;
+  top: -14vw;
+  left: -10vw;
+  background: radial-gradient(circle, var(--color-primary-1), transparent 70%);
+}
+
+.mesh-bg::after {
+  width: 40vw;
+  height: 40vw;
+  bottom: -16vw;
+  right: -8vw;
+  background: radial-gradient(circle, var(--color-primary-2), transparent 70%);
+}
+
+.mesh-bg .blob-3 {
+  width: 30vw;
+  height: 30vw;
+  top: 30%;
+  right: 20%;
+  background: radial-gradient(circle, var(--color-accent-gold), transparent 70%);
+  opacity: 0.28;
+}
+
+/* --- Glass primitives --- */
+.glass {
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+}
+
+.glass-strong {
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+}
+
+.glass-pill {
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+.glass-divider {
+  border-color: rgba(20, 21, 26, 0.08);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary-1);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(20, 21, 26, 0.15);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
