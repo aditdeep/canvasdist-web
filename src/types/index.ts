@@ -99,17 +99,42 @@ export type Stock = {
   product?: Product;
 };
 
+export type Hub = {
+  id: number;
+  name: string;
+  type: "warehouse" | "agent_office" | "custom";
+  warehouse_id: number | null;
+  agent_id: number | null;
+  address: string | null;
+};
+
+export type DeliveryLeg = {
+  id: number;
+  delivery_order_id: number;
+  sequence: number;
+  from_hub_id: number | null;
+  to_hub_id: number | null;
+  courier_id: number | null;
+  status: "pending" | "in_transit" | "arrived";
+  departed_at: string | null;
+  arrived_at: string | null;
+  from_hub?: Hub;
+  to_hub?: Hub;
+  courier?: User;
+};
+
 export type DeliveryOrder = {
   id: number;
   do_number: string;
   order_id: number;
   courier_id: number | null;
-  status: "siap_kirim" | "dikirim" | "sampai_tujuan" | "selesai";
+  status: "siap_kirim" | "dikirim" | "di_hub" | "sampai_tujuan" | "selesai";
   pod_photo_path: string | null;
   shipped_at: string | null;
   delivered_at: string | null;
   order?: Order;
   courier?: User;
+  legs?: DeliveryLeg[];
 };
 
 export type Invoice = {
