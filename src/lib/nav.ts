@@ -16,6 +16,7 @@ import {
   Package,
   Store,
   Map,
+  Waypoints,
 } from "lucide-react";
 
 export type NavItem = {
@@ -42,6 +43,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "Produk", href: "/master-data/produk", icon: Package, roles: ["super_admin", "wilayah", "agen", "sales", "reseller", "gudang"] },
       { label: "Outlet", href: "/master-data/outlet", icon: Store, roles: ["super_admin", "wilayah", "agen", "sales"] },
       { label: "Wilayah", href: "/master-data/wilayah", icon: Map, roles: ["super_admin", "wilayah"] },
+      { label: "Hub", href: "/master-data/hub", icon: Waypoints, roles: ["super_admin", "wilayah", "agen", "gudang"] },
       { label: "User", href: "/master-data/user", icon: Users, roles: ["super_admin"] },
     ],
   },
