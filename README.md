@@ -36,5 +36,15 @@ cp .env.example .env.local
 npm run dev
 ```
 
+Set `NEXT_PUBLIC_API_URL` di `.env.local` ke URL backend `canvasdist-api` (mis. `http://localhost:8000/api` lokal, atau URL production nanti).
+
+## Status koneksi API
+
+Semua halaman berikut sudah terhubung penuh ke `canvasdist-api` (bukan data dummy):
+Login, Dashboard, Produk, Outlet, Wilayah, User, Kunjungan Sales (checkin GPS asli),
+Order (list + approve), Inventory (stok + mutasi), Pengiriman (update status),
+Piutang, Promo, Komisi Jaringan (list + payout), Cashback Barang Bekas (input + verifikasi),
+Saldo (wallet + mutasi + top up Duitku + member card asli), Payment (riwayat transaksi), Laporan.
+
 Backend API: lihat repo `canvasdist-api`.
 Dokumentasi lengkap alur bisnis: lihat repo `canvasdist-docs`.

@@ -1,0 +1,63 @@
+"use client";
+
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { api, ApiError, getToken, setToken } from "./api";
+import type { User } from "@/types";
+
+type AuthContextValue = {
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    api
+      .get<User>("/auth/me")
+      .then(setUser)
+      .catch(() => setToken(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function login(email: string, password: string) {
+    const res = await api.post<{ user: User; token: string }>("/auth/login", { email, password });
+    setToken(res.token);
+    setUser(res.user);
+    router.push("/dashboard");
+  }
+
+  async function logout() {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // token mungkin sudah invalid, tetap lanjut clear di client
+    }
+    setToken(null);
+    setUser(null);
+    router.push("/login");
+  }
+
+  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth harus dipakai di dalam AuthProvider");
+  return ctx;
+}
+
+export { ApiError };

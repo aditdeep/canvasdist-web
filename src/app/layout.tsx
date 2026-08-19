@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { Providers } from "@/components/Providers";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -42,7 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="mesh-bg" aria-hidden="true">
           <span className="blob-3" />
         </div>
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

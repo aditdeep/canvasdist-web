@@ -1,8 +1,10 @@
 "use client";
 
-import { Bell, Search } from "lucide-react";
+import { Bell, LogOut, Search } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
-export function Topbar({ userName = "Agen Semarang", role = "Agen" }: { userName?: string; role?: string }) {
+export function Topbar({ userName = "Pengguna", role = "" }: { userName?: string; role?: string }) {
+  const { logout } = useAuth();
   const initials = userName
     .split(" ")
     .slice(0, 2)
@@ -45,6 +47,14 @@ export function Topbar({ userName = "Agen Semarang", role = "Agen" }: { userName
             <p className="text-[11px] text-[var(--color-ink-soft)]">{role}</p>
           </div>
         </div>
+
+        <button
+          aria-label="Keluar"
+          onClick={() => logout()}
+          className="w-9 h-9 rounded-full glass-pill grid place-items-center text-[var(--color-ink-soft)] hover:text-[var(--color-danger)] transition"
+        >
+          <LogOut size={16} />
+        </button>
       </div>
     </header>
   );

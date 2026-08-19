@@ -3,16 +3,27 @@
 import { useState } from "react";
 import { GlassCard, GlassInput, GradientButton } from "@/components/ui";
 import { MemberCard } from "@/components/MemberCard";
-import { Lock, Mail } from "lucide-react";
+import { Lock, Mail, AlertCircle } from "lucide-react";
+import { useAuth, ApiError } from "@/lib/auth-context";
 
 export default function LoginPage() {
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
     setLoading(true);
-    // TODO: panggil POST /api/auth/login dari canvasdist-api, simpan token
-    setTimeout(() => setLoading(false), 800);
+    try {
+      await login(email, password);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Gagal masuk, coba lagi.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -55,19 +66,40 @@ export default function LoginPage() {
             Untuk Admin, Agen, Sales, Gudang, dan Kurir.
           </p>
 
+          {error && (
+            <div className="flex items-center gap-2 rounded-xl bg-[var(--color-danger)]/10 text-[var(--color-danger)] text-xs px-3 py-2.5 mb-4">
+              <AlertCircle size={14} className="shrink-0" />
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
               <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Email</label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-ink-faint)]" />
-                <GlassInput type="email" placeholder="nama@perusahaan.com" required className="pl-10" />
+                <GlassInput
+                  type="email"
+                  placeholder="nama@perusahaan.com"
+                  required
+                  className="pl-10"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
             </div>
             <div>
               <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Kata sandi</label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-ink-faint)]" />
-                <GlassInput type="password" placeholder="••••••••" required className="pl-10" />
+                <GlassInput
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                  className="pl-10"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </div>
             </div>
 
