@@ -72,6 +72,45 @@ export const api = {
   patch: <T,>(path: string, data?: unknown) =>
     request<T>(path, { method: "PATCH", body: data ? JSON.stringify(data) : undefined }),
   delete: <T,>(path: string) => request<T>(path, { method: "DELETE" }),
+  /**
+   * Upload file (multipart/form-data) — dipakai untuk foto checkin, POD, buyback.
+   * Tidak set Content-Type manual supaya browser otomatis isi boundary yang benar.
+   */
+  postForm: async <T,>(path: string, formData: FormData): Promise<T> => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+
+    if (res.status === 401) {
+      setToken(null);
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+        window.location.href = "/login";
+      }
+    }
+
+    const text = await res.text();
+    let body: unknown = null;
+    if (text) {
+      try {
+        body = JSON.parse(text);
+      } catch {
+        body = text;
+      }
+    }
+
+    if (!res.ok) {
+      const b = (body ?? {}) as { message?: string; errors?: Record<string, string[]> };
+      throw new ApiError(b.message || `Terjadi kesalahan (${res.status})`, res.status, b.errors);
+    }
+
+    return body as T;
+  },
 };
 
 // --- Format helpers dipakai di banyak halaman ---

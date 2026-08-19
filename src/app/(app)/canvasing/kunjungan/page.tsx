@@ -6,6 +6,7 @@ import { Plus, MapPinned, Navigation } from "lucide-react";
 import { GlassCard, GradientButton } from "@/components/ui";
 import { DataTable, EmptyState, LoadingRows, ErrorState } from "@/components/DataTable";
 import { Modal } from "@/components/Modal";
+import { PhotoCapture } from "@/components/PhotoCapture";
 import { api, fetcher, formatDateTime, ApiError } from "@/lib/api";
 import type { Paginated, Visit, Outlet } from "@/types";
 
@@ -17,6 +18,7 @@ export default function KunjunganPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [outletId, setOutletId] = useState("");
   const [notes, setNotes] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
   const [locating, setLocating] = useState(false);
 
   async function handleCheckin(e: React.FormEvent) {
@@ -34,15 +36,18 @@ export default function KunjunganPage() {
         setLocating(false);
         setSaving(true);
         try {
-          await api.post("/visits/checkin", {
-            outlet_id: Number(outletId),
-            checkin_lat: pos.coords.latitude,
-            checkin_lng: pos.coords.longitude,
-            notes,
-          });
+          const formData = new FormData();
+          formData.append("outlet_id", outletId);
+          formData.append("checkin_lat", String(pos.coords.latitude));
+          formData.append("checkin_lng", String(pos.coords.longitude));
+          formData.append("notes", notes);
+          if (photo) formData.append("photo", photo);
+
+          await api.postForm("/visits/checkin", formData);
           setOpen(false);
           setOutletId("");
           setNotes("");
+          setPhoto(null);
           mutate();
         } catch (err) {
           setFormError(err instanceof ApiError ? err.message : "Gagal checkin");
@@ -127,6 +132,10 @@ export default function KunjunganPage() {
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Kondisi stok outlet, permintaan khusus, dll."
             />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Foto Etalase/Stok (opsional)</label>
+            <PhotoCapture onChange={setPhoto} label="Ambil foto outlet" />
           </div>
           <p className="text-[11px] text-[var(--color-ink-faint)] flex items-center gap-1.5">
             <Navigation size={12} /> Lokasi GPS diambil otomatis saat checkin.

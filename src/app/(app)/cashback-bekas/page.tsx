@@ -6,6 +6,7 @@ import { Plus, Recycle, Check } from "lucide-react";
 import { GlassCard, GradientButton, GlassInput, Badge, GhostButton } from "@/components/ui";
 import { DataTable, EmptyState, LoadingRows, ErrorState } from "@/components/DataTable";
 import { Modal } from "@/components/Modal";
+import { PhotoCapture } from "@/components/PhotoCapture";
 import { api, fetcher, formatCurrency, ApiError } from "@/lib/api";
 import type { Paginated, Buyback, Outlet } from "@/types";
 
@@ -28,20 +29,24 @@ export default function CashbackBekasPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [form, setForm] = useState({ outlet_id: "", item_type: "Jerigen 5L", qty: "", unit_price: "3000" });
+  const [photo, setPhoto] = useState<File | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setFormError(null);
     try {
-      await api.post("/buyback", {
-        outlet_id: Number(form.outlet_id),
-        item_type: form.item_type,
-        qty: Number(form.qty),
-        unit_price: Number(form.unit_price),
-      });
+      const formData = new FormData();
+      formData.append("outlet_id", form.outlet_id);
+      formData.append("item_type", form.item_type);
+      formData.append("qty", form.qty);
+      formData.append("unit_price", form.unit_price);
+      if (photo) formData.append("photo", photo);
+
+      await api.postForm("/buyback", formData);
       setOpen(false);
       setForm({ outlet_id: "", item_type: "Jerigen 5L", qty: "", unit_price: "3000" });
+      setPhoto(null);
       mutate();
     } catch (err) {
       setFormError(err instanceof ApiError ? err.message : "Gagal menyimpan data buyback");
@@ -140,6 +145,10 @@ export default function CashbackBekasPage() {
               <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Harga/Unit</label>
               <GlassInput type="number" required value={form.unit_price} onChange={(e) => setForm({ ...form, unit_price: e.target.value })} />
             </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Foto Barang (opsional)</label>
+            <PhotoCapture onChange={setPhoto} label="Ambil foto barang bekas" />
           </div>
           <GradientButton type="submit" className="w-full mt-2" disabled={saving}>
             {saving ? "Menyimpan..." : "Simpan"}
