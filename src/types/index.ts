@@ -185,6 +185,13 @@ export type MemberCard = {
   level: string;
 };
 
+export type PaymentMethod = {
+  paymentMethod: string;
+  paymentName: string;
+  paymentImage: string;
+  totalFee: string;
+};
+
 export type PaymentTransaction = {
   id: number;
   reference: string;

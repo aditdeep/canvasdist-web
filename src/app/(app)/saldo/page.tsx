@@ -7,7 +7,7 @@ import { GlassCard, GradientButton, Badge } from "@/components/ui";
 import { EmptyState, LoadingRows, ErrorState } from "@/components/DataTable";
 import { MemberCard } from "@/components/MemberCard";
 import { api, fetcher, formatCurrency, formatDateTime, ApiError } from "@/lib/api";
-import type { Paginated, Wallet, WalletMutation, MemberCard as MemberCardType } from "@/types";
+import type { Paginated, Wallet, WalletMutation, MemberCard as MemberCardType, PaymentMethod } from "@/types";
 import { useAuth } from "@/lib/auth-context";
 
 const MUTATION_ICON: Record<WalletMutation["type"], typeof ArrowDownLeft> = {
@@ -26,17 +26,30 @@ export default function SaldoPage() {
   const { data: mutations, error, isLoading } = useSWR<Paginated<WalletMutation>>("/wallet/mutations", fetcher);
   const { data: card } = useSWR<MemberCardType>("/member-card", fetcher);
 
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState("100000");
+  const [method, setMethod] = useState<string | null>(null);
   const [loadingTopup, setLoadingTopup] = useState(false);
   const [topupError, setTopupError] = useState<string | null>(null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
 
-  async function handleTopup(value: number) {
+  const { data: methods, isLoading: methodsLoading } = useSWR<PaymentMethod[]>(
+    amount ? `/wallet/payment-methods?amount=${amount}` : null,
+    fetcher
+  );
+
+  async function handleTopup() {
+    if (!method) {
+      setTopupError("Pilih metode pembayaran dulu ya.");
+      return;
+    }
     setLoadingTopup(true);
     setTopupError(null);
     setPaymentUrl(null);
     try {
-      const res = await api.post<{ payment_url: string | null }>("/wallet/topup", { amount: value });
+      const res = await api.post<{ payment_url: string | null }>("/wallet/topup", {
+        amount: Number(amount),
+        payment_method: method,
+      });
       if (res.payment_url) {
         setPaymentUrl(res.payment_url);
         window.open(res.payment_url, "_blank");
@@ -68,14 +81,16 @@ export default function SaldoPage() {
             balance={formatCurrency(wallet?.balance ?? 0)}
           />
           <GlassCard>
-            <p className="text-xs text-[var(--color-ink-soft)] mb-3">Top up cepat</p>
-            {topupError && <ErrorState message={topupError} />}
-            <div className="grid grid-cols-3 gap-2 mb-3 mt-2">
+            <p className="text-xs text-[var(--color-ink-soft)] mb-2">Nominal top up</p>
+            <div className="grid grid-cols-3 gap-2 mb-3">
               {[100000, 500000, 1000000].map((v) => (
                 <button
                   key={v}
                   type="button"
-                  onClick={() => setAmount(String(v))}
+                  onClick={() => {
+                    setAmount(String(v));
+                    setMethod(null);
+                  }}
                   className={`glass-pill py-2 text-xs font-semibold transition ${
                     amount === String(v) ? "text-[var(--color-primary-1)] bg-white/90" : "text-[var(--color-ink)] hover:bg-white/80"
                   }`}
@@ -84,17 +99,43 @@ export default function SaldoPage() {
                 </button>
               ))}
             </div>
-            <GradientButton
-              className="w-full"
-              disabled={loadingTopup || !amount}
-              onClick={() => handleTopup(Number(amount))}
-            >
+
+            <p className="text-xs text-[var(--color-ink-soft)] mb-2">Metode pembayaran</p>
+            {methodsLoading && <div className="h-20 rounded-xl bg-white/40 animate-pulse mb-3" />}
+            {!methodsLoading && (
+              <div className="max-h-44 overflow-y-auto space-y-1.5 mb-3 pr-1">
+                {(methods ?? []).map((m) => (
+                  <button
+                    key={m.paymentMethod}
+                    type="button"
+                    onClick={() => setMethod(m.paymentMethod)}
+                    className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition ${
+                      method === m.paymentMethod ? "bg-white/90 text-[var(--color-primary-1)] border border-[var(--color-primary-1)]/40" : "glass-pill hover:bg-white/80"
+                    }`}
+                  >
+                    <span>{m.paymentName}</span>
+                    <span className="text-[var(--color-ink-faint)]">
+                      {Number(m.totalFee) > 0 ? `Fee ${formatCurrency(m.totalFee)}` : "Gratis"}
+                    </span>
+                  </button>
+                ))}
+                {(methods ?? []).length === 0 && (
+                  <p className="text-[11px] text-[var(--color-ink-faint)] px-1">
+                    Tidak ada metode aktif — cek konfigurasi Duitku.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {topupError && <ErrorState message={topupError} />}
+
+            <GradientButton className="w-full mt-1" disabled={loadingTopup || !amount || !method} onClick={handleTopup}>
               {loadingTopup ? (
                 <>
                   <RefreshCw size={14} className="animate-spin" /> Memproses...
                 </>
               ) : (
-                "Top Up via Duitku"
+                "Top Up Sekarang"
               )}
             </GradientButton>
             {paymentUrl && (
@@ -102,9 +143,6 @@ export default function SaldoPage() {
                 Halaman pembayaran dibuka di tab baru. Saldo otomatis bertambah setelah pembayaran berhasil.
               </p>
             )}
-            <p className="text-[11px] text-[var(--color-ink-faint)] mt-2 text-center">
-              Bayar pakai saldo, dapat diskon tambahan untuk order tertentu.
-            </p>
           </GlassCard>
         </div>
 
