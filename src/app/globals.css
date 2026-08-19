@@ -98,51 +98,36 @@ body {
 }
 
 /* --- Glass primitives ---
-   Fallback: latar hampir solid supaya tetap tidak transparan-tembus kalau
-   backdrop-filter tidak aktif di browser/perangkat tertentu (mis. beberapa
-   kombinasi GPU/emulator men-skip backdrop-filter tanpa error, sehingga
-   hanya warna rgba biasa yang tampil dan konten di baliknya numpuk saat
-   discroll). Saat backdrop-filter didukung, kita turunkan opacity fill dan
-   biarkan blur yang bekerja untuk efek kaca sesungguhnya.
+   Opacity dasar dibuat TINGGI dan SELALU aktif (tidak menunggu feature-detection
+   backdrop-filter), supaya konten di baliknya tidak pernah terbaca jelas —
+   baik saat backdrop-filter benar-benar merender blur, maupun saat browser/
+   device diam-diam mengabaikannya. Blur ditambahkan sebagai lapisan bonus,
+   bukan syarat keterbacaan.
 */
 .glass {
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
 }
 
 .glass-strong {
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.95);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
 }
 
 .glass-pill {
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.95);
   border: 1px solid var(--glass-border);
   border-radius: 999px;
-}
-
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .glass {
-    background: var(--glass-fill);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
-  }
-
-  .glass-strong {
-    background: var(--glass-fill-strong);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-  }
-
-  .glass-pill {
-    background: var(--glass-fill-strong);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
-  }
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
 }
 
 .glass-divider {
