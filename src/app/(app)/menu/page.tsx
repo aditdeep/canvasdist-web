@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { GlassCard } from "@/components/ui";
-import { NAV_GROUPS } from "@/lib/nav";
+import { navGroupsForRole } from "@/lib/nav";
 import { useAuth } from "@/lib/auth-context";
 
 export default function MenuPage() {
   const { user, logout } = useAuth();
 
   // Grup "Utama" (Dashboard) sudah ada di bottom nav sebagai "Home", jadi tidak perlu diulang di sini
-  const groups = NAV_GROUPS.filter((g) => g.title !== "Utama");
+  const groups = navGroupsForRole(user?.role ?? "reseller").filter((g) => g.title !== "Utama");
 
   return (
     <div className="max-w-lg mx-auto space-y-5 lg:hidden">

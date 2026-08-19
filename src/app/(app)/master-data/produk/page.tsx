@@ -7,9 +7,12 @@ import { GlassCard, GradientButton, GlassInput, Badge } from "@/components/ui";
 import { DataTable, EmptyState, LoadingRows, ErrorState } from "@/components/DataTable";
 import { Modal } from "@/components/Modal";
 import { api, fetcher, formatCurrency, ApiError } from "@/lib/api";
+import { canWrite } from "@/lib/permissions";
+import { useAuth } from "@/lib/auth-context";
 import type { Paginated, Product } from "@/types";
 
 export default function ProdukPage() {
+  const { user } = useAuth();
   const { data, error, isLoading, mutate } = useSWR<Paginated<Product>>("/products", fetcher);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -41,9 +44,11 @@ export default function ProdukPage() {
           <h1 className="font-[family-name:var(--font-manrope)] text-2xl font-bold">Produk</h1>
           <p className="text-sm text-[var(--color-ink-soft)] mt-0.5">Katalog produk dan harga dasar.</p>
         </div>
-        <GradientButton onClick={() => setOpen(true)} className="shrink-0">
-          <Plus size={16} /> Tambah
-        </GradientButton>
+        {canWrite("produk", user?.role) && (
+          <GradientButton onClick={() => setOpen(true)} className="shrink-0">
+            <Plus size={16} /> Tambah
+          </GradientButton>
+        )}
       </div>
 
       <GlassCard>

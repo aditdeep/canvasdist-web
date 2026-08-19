@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { NAV_GROUPS } from "@/lib/nav";
+import { navGroupsForRole } from "@/lib/nav";
+import { useAuth } from "@/lib/auth-context";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const groups = navGroupsForRole(user?.role ?? "reseller");
 
   return (
     <aside className="hidden lg:flex flex-col w-[248px] shrink-0 h-screen sticky top-0 p-4">
@@ -21,7 +24,7 @@ export function Sidebar() {
         </Link>
 
         <nav className="flex-1 overflow-y-auto pr-1 space-y-5">
-          {NAV_GROUPS.map((group) => (
+          {groups.map((group) => (
             <div key={group.title}>
               <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-ink-faint)]">
                 {group.title}

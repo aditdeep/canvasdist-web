@@ -7,6 +7,8 @@ import { GlassCard, GradientButton, GlassInput, Badge } from "@/components/ui";
 import { DataTable, EmptyState, LoadingRows, ErrorState } from "@/components/DataTable";
 import { Modal } from "@/components/Modal";
 import { api, fetcher, ApiError } from "@/lib/api";
+import { canWrite } from "@/lib/permissions";
+import { useAuth } from "@/lib/auth-context";
 import type { Paginated, User } from "@/types";
 
 const ROLE_OPTIONS = [
@@ -29,6 +31,7 @@ const ROLE_TONE: Record<string, "primary" | "success" | "warning" | "danger" | "
 };
 
 export default function UserPage() {
+  const { user: currentUser } = useAuth();
   const { data, error, isLoading, mutate } = useSWR<Paginated<User>>("/users", fetcher);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -60,9 +63,11 @@ export default function UserPage() {
           <h1 className="font-[family-name:var(--font-manrope)] text-2xl font-bold">User</h1>
           <p className="text-sm text-[var(--color-ink-soft)] mt-0.5">Kelola akun agen, sales, gudang, dan kurir.</p>
         </div>
-        <GradientButton onClick={() => setOpen(true)} className="shrink-0">
-          <Plus size={16} /> Tambah
-        </GradientButton>
+        {canWrite("user", currentUser?.role) && (
+          <GradientButton onClick={() => setOpen(true)} className="shrink-0">
+            <Plus size={16} /> Tambah
+          </GradientButton>
+        )}
       </div>
 
       <GlassCard>

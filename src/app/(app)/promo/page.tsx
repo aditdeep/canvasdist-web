@@ -7,6 +7,8 @@ import { GlassCard, GradientButton, GlassInput, Badge } from "@/components/ui";
 import { DataTable, EmptyState, LoadingRows, ErrorState } from "@/components/DataTable";
 import { Modal } from "@/components/Modal";
 import { api, fetcher, ApiError } from "@/lib/api";
+import { canWrite } from "@/lib/permissions";
+import { useAuth } from "@/lib/auth-context";
 import type { Paginated, Promo } from "@/types";
 
 const TYPE_LABEL: Record<Promo["type"], string> = {
@@ -17,6 +19,7 @@ const TYPE_LABEL: Record<Promo["type"], string> = {
 };
 
 export default function PromoPage() {
+  const { user } = useAuth();
   const { data, error, isLoading, mutate } = useSWR<Paginated<Promo>>("/promos", fetcher);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -54,9 +57,11 @@ export default function PromoPage() {
           <h1 className="font-[family-name:var(--font-manrope)] text-2xl font-bold">Promo, Diskon & Reward</h1>
           <p className="text-sm text-[var(--color-ink-soft)] mt-0.5">Kelola promo aktif untuk jaringan kamu.</p>
         </div>
-        <GradientButton onClick={() => setOpen(true)} className="shrink-0">
-          <Plus size={16} /> Buat Promo
-        </GradientButton>
+        {canWrite("promo", user?.role) && (
+          <GradientButton onClick={() => setOpen(true)} className="shrink-0">
+            <Plus size={16} /> Buat Promo
+          </GradientButton>
+        )}
       </div>
 
       <GlassCard>
