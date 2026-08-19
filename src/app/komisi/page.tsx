@@ -1,0 +1,8 @@
+export default function Page() {
+  return (
+    <div className="p-6">
+      <h1 className="text-xl font-semibold">Komisi Jaringan</h1>
+      <p className="text-gray-500 mt-2">Halaman ini masih placeholder — implementasi menyusul.</p>
+    </div>
+  );
+}
