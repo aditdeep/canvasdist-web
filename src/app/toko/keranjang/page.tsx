@@ -52,7 +52,7 @@ export default function KeranjangPage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">{product.name}</p>
               <p className="text-sm text-[var(--color-primary-1)] font-bold mt-0.5">
-                {formatCurrency(product.display_price ?? product.base_price)}
+                {formatCurrency(product.discounted_price ?? product.display_price ?? product.base_price)}
               </p>
             </div>
             <div className="flex items-center glass-pill">

@@ -93,6 +93,8 @@ export type Order = {
   created_at: string;
   outlet?: Outlet;
   items?: OrderItem[];
+  delivery_order?: DeliveryOrder | null;
+  payment_transactions?: PaymentTransaction[];
 };
 
 export type Warehouse = {

@@ -101,7 +101,7 @@ export default function CheckoutPage() {
               <span className="text-[var(--color-ink)]">
                 {product.name} <span className="text-[var(--color-ink-faint)]">x{qty}</span>
               </span>
-              <span className="font-medium">{formatCurrency(Number(product.display_price ?? product.base_price) * qty)}</span>
+              <span className="font-medium">{formatCurrency(Number(product.discounted_price ?? product.display_price ?? product.base_price) * qty)}</span>
             </div>
           ))}
         </div>

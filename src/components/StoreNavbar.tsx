@@ -20,7 +20,7 @@ function SearchBox() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="hidden md:flex flex-1 max-w-md">
+    <form onSubmit={handleSubmit} className="flex flex-1 max-w-md">
       <div className="relative w-full">
         <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-ink-faint)]" />
         <input
