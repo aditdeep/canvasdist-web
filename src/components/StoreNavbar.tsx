@@ -1,11 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, User } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, Suspense } from "react";
+import { Search, ShoppingCart, User } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
 import { useBranding } from "@/lib/use-branding";
 import { imageUrl } from "@/lib/api";
+
+function SearchBox() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("search") ?? "");
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    router.push(query ? `/toko?search=${encodeURIComponent(query)}` : "/toko");
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="hidden md:flex flex-1 max-w-md">
+      <div className="relative w-full">
+        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-ink-faint)]" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Cari produk..."
+          className="w-full rounded-full bg-white/50 border border-white/70 pl-9 pr-4 py-2 text-sm outline-none focus:bg-white/80 transition"
+        />
+      </div>
+    </form>
+  );
+}
 
 export function StoreNavbar() {
   const { totalItems } = useCart();
@@ -32,7 +59,11 @@ export function StoreNavbar() {
           </span>
         </Link>
 
-        <div className="flex-1" />
+        <div className="flex-1 flex justify-center px-4">
+          <Suspense fallback={null}>
+            <SearchBox />
+          </Suspense>
+        </div>
 
         <Link
           href="/toko/keranjang"

@@ -12,6 +12,7 @@ export type User = {
   is_active: boolean;
   wallet?: Wallet;
   member_card?: MemberCard;
+  outlet?: { id: number; address: string | null; name: string } | null;
 };
 
 export type Region = {

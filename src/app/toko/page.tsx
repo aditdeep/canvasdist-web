@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import { Tag, Truck, ShieldCheck, ImageIcon } from "lucide-react";
+import { Tag, Truck, ShieldCheck, ImageIcon, Search } from "lucide-react";
 import { HeroSlider } from "@/components/HeroSlider";
 import { ProductCard } from "@/components/ProductCard";
 import { GlassCard } from "@/components/ui";
@@ -15,13 +16,16 @@ const PERKS = [
   { icon: Tag, title: "Harga Transparan", desc: "Tanpa biaya tersembunyi saat checkout" },
 ];
 
-export default function StorefrontHomePage() {
+function StorefrontHomeContent() {
+  const searchParams = useSearchParams();
+  const search = searchParams.get("search");
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const { data: categories } = useSWR<Category[]>("/public/categories", fetcher);
-  const { data, isLoading } = useSWR<Paginated<Product>>(
-    `/public/products${categoryId ? `?category_id=${categoryId}` : ""}`,
-    fetcher
-  );
+
+  const query = search
+    ? `/public/products?search=${encodeURIComponent(search)}`
+    : `/public/products${categoryId ? `?category_id=${categoryId}` : ""}`;
+  const { data, isLoading } = useSWR<Paginated<Product>>(query, fetcher);
 
   const products = data?.data ?? [];
   const activeCategoryName = categories?.find((c) => c.id === categoryId)?.name;
@@ -89,8 +93,14 @@ export default function StorefrontHomePage() {
         </div>
       )}
 
-      <h2 className="font-[family-name:var(--font-manrope)] font-bold text-lg mb-3">
-        {activeCategoryName ?? "Semua Produk"}
+      <h2 className="font-[family-name:var(--font-manrope)] font-bold text-lg mb-3 flex items-center gap-2">
+        {search ? (
+          <>
+            <Search size={16} className="text-[var(--color-ink-faint)]" /> Hasil untuk &quot;{search}&quot;
+          </>
+        ) : (
+          activeCategoryName ?? "Semua Produk"
+        )}
       </h2>
 
       {isLoading && (
@@ -103,7 +113,9 @@ export default function StorefrontHomePage() {
 
       {!isLoading && products.length === 0 && (
         <GlassCard className="text-center py-16">
-          <p className="text-sm text-[var(--color-ink-soft)]">Belum ada produk di kategori ini.</p>
+          <p className="text-sm text-[var(--color-ink-soft)]">
+            {search ? "Produk tidak ditemukan." : "Belum ada produk di kategori ini."}
+          </p>
         </GlassCard>
       )}
 
@@ -115,5 +127,13 @@ export default function StorefrontHomePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function StorefrontHomePage() {
+  return (
+    <Suspense fallback={null}>
+      <StorefrontHomeContent />
+    </Suspense>
   );
 }
