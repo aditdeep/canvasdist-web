@@ -31,6 +31,9 @@ export type Product = {
   photo_path: string | null;
   description: string | null;
   display_price?: string;
+  discounted_price?: string;
+  promo_label?: string | null;
+  shipping_fee?: string | null;
   is_active: boolean;
 };
 

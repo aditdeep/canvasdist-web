@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ShoppingCart, Package } from "lucide-react";
-import { formatCurrency } from "@/lib/api";
+import { formatCurrency, imageUrl } from "@/lib/api";
 import { useCart } from "@/lib/cart-context";
 import type { Product } from "@/types";
 
@@ -16,7 +16,7 @@ export function ProductCard({ product }: { product: Product }) {
           {product.photo_path ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={product.photo_path}
+              src={imageUrl(product.photo_path) ?? undefined}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
             />

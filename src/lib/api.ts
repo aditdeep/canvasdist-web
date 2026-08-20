@@ -130,3 +130,16 @@ export function formatDate(value: string | null | undefined): string {
   if (!value) return "-";
   return new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(new Date(value));
 }
+
+/**
+ * Bikin URL gambar lengkap dari path relatif yang disimpan backend
+ * (mis. "/storage/products/xxx.jpg"). Tidak menempel ke satu domain hardcode
+ * supaya benar baik di localhost maupun production — selalu mengikuti
+ * NEXT_PUBLIC_API_URL yang sedang aktif.
+ */
+export function imageUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path; // sudah absolut
+  const origin = API_BASE_URL.replace(/\/api\/?$/, "");
+  return `${origin}${path}`;
+}

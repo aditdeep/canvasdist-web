@@ -6,7 +6,7 @@ import { Plus, Package, Pencil, X } from "lucide-react";
 import { GlassCard, GradientButton, GlassInput, Badge } from "@/components/ui";
 import { DataTable, EmptyState, LoadingRows, ErrorState } from "@/components/DataTable";
 import { Modal } from "@/components/Modal";
-import { api, fetcher, formatCurrency, ApiError } from "@/lib/api";
+import { api, fetcher, formatCurrency, imageUrl, ApiError } from "@/lib/api";
 import { canWrite } from "@/lib/permissions";
 import { useAuth } from "@/lib/auth-context";
 import type { Paginated, Product } from "@/types";
@@ -124,7 +124,7 @@ export default function ProdukPage() {
                   <div className="w-10 h-10 rounded-lg bg-white/50 overflow-hidden shrink-0">
                     {p.photo_path ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.photo_path} alt={p.name} className="w-full h-full object-cover" />
+                      <img src={imageUrl(p.photo_path) ?? undefined} alt={p.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full grid place-items-center text-[var(--color-ink-faint)]">
                         <Package size={16} />
@@ -155,7 +155,7 @@ export default function ProdukPage() {
             {photoPreview ? (
               <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photoPreview} alt="Preview" className="w-full h-40 object-cover rounded-xl" />
+                <img src={photoPreview.startsWith("blob:") ? photoPreview : (imageUrl(photoPreview) ?? undefined)} alt="Preview" className="w-full h-40 object-cover rounded-xl" />
                 <button
                   type="button"
                   onClick={() => {

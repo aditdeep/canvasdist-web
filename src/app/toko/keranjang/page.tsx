@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { GlassCard, GradientButton, GhostButton } from "@/components/ui";
-import { formatCurrency } from "@/lib/api";
+import { formatCurrency, imageUrl } from "@/lib/api";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
 
@@ -46,7 +46,7 @@ export default function KeranjangPage() {
             <div className="w-16 h-16 rounded-xl bg-white/40 shrink-0 overflow-hidden">
               {product.photo_path && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={product.photo_path} alt={product.name} className="w-full h-full object-cover" />
+                <img src={imageUrl(product.photo_path) ?? undefined} alt={product.name} className="w-full h-full object-cover" />
               )}
             </div>
             <div className="flex-1 min-w-0">
