@@ -84,6 +84,9 @@ export type Order = {
   agent_id: number | null;
   status: OrderStatus;
   payment_method: "cash" | "saldo" | "duitku";
+  payment_status: "unpaid" | "paid";
+  fulfillment_type: "delivery" | "pickup";
+  is_storefront_order: boolean;
   subtotal: string;
   discount_total: string;
   total: string;

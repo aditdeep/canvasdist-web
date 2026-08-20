@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Truck, Store, CheckCircle2 } from "lucide-react";
-import { GlassCard, GradientButton, Badge } from "@/components/ui";
+import { Truck, Store, CheckCircle2, Wallet, Banknote } from "lucide-react";
+import { GlassCard, GradientButton } from "@/components/ui";
 import { api, formatCurrency, ApiError } from "@/lib/api";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
@@ -14,6 +14,7 @@ export default function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [fulfillment, setFulfillment] = useState<"delivery" | "pickup">("delivery");
+  const [payNow, setPayNow] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successOrder, setSuccessOrder] = useState<Order | null>(null);
@@ -36,9 +37,23 @@ export default function CheckoutPage() {
     try {
       const order = await api.post<Order>("/orders", {
         fulfillment_type: fulfillment,
-        payment_method: "cash",
+        payment_method: payNow ? "duitku" : "cash",
         items: items.map((i) => ({ product_id: i.product.id, qty: i.qty })),
       });
+
+      if (payNow) {
+        const res = await api.post<{ payment_url: string | null }>("/payment/duitku/create", {
+          order_id: order.id,
+          payment_method: "BC",
+          return_url: `${window.location.origin}/toko/pesanan`,
+        });
+        clear();
+        if (res.payment_url) {
+          window.location.href = res.payment_url;
+          return;
+        }
+      }
+
       setSuccessOrder(order);
       clear();
     } catch (err) {
@@ -57,7 +72,7 @@ export default function CheckoutPage() {
           Nomor pesanan: <span className="font-mono font-semibold">{successOrder.order_no}</span>
         </p>
         <p className="text-xs text-[var(--color-ink-faint)] max-w-xs">
-          Agen akan segera memproses pesananmu. Kamu bisa pantau statusnya di halaman akun.
+          Agen akan segera memproses pesananmu. Kamu bisa pantau statusnya di halaman Pesanan.
         </p>
         <GradientButton className="mt-2" onClick={() => router.push("/toko")}>
           Kembali Belanja
@@ -123,17 +138,33 @@ export default function CheckoutPage() {
       </GlassCard>
 
       <GlassCard>
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="font-semibold text-sm">Metode Pembayaran</h2>
-          <Badge tone="neutral">Bayar di tempat (COD)</Badge>
+        <h2 className="font-semibold text-sm mb-3">Metode Pembayaran</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => setPayNow(true)}
+            className={`rounded-xl p-4 text-left transition ${
+              payNow ? "bg-white/90 border-2 border-[var(--color-primary-1)]" : "glass-pill border-2 border-transparent"
+            }`}
+          >
+            <Wallet size={20} className="text-[var(--color-primary-1)] mb-2" />
+            <p className="text-sm font-semibold">Bayar Sekarang</p>
+            <p className="text-[11px] text-[var(--color-ink-soft)]">Transfer / VA via Duitku</p>
+          </button>
+          <button
+            onClick={() => setPayNow(false)}
+            className={`rounded-xl p-4 text-left transition ${
+              !payNow ? "bg-white/90 border-2 border-[var(--color-primary-1)]" : "glass-pill border-2 border-transparent"
+            }`}
+          >
+            <Banknote size={20} className="text-[var(--color-primary-1)] mb-2" />
+            <p className="text-sm font-semibold">Bayar di Tempat</p>
+            <p className="text-[11px] text-[var(--color-ink-soft)]">COD saat barang diterima/diambil</p>
+          </button>
         </div>
-        <p className="text-xs text-[var(--color-ink-soft)]">
-          Pembayaran online (saldo/transfer) bisa dipilih setelah pesanan dikonfirmasi agen.
-        </p>
       </GlassCard>
 
       <GradientButton className="w-full" onClick={handleSubmit} disabled={saving}>
-        {saving ? "Memproses..." : `Buat Pesanan — ${formatCurrency(totalPrice)}`}
+        {saving ? "Memproses..." : payNow ? `Bayar Sekarang — ${formatCurrency(totalPrice)}` : `Buat Pesanan — ${formatCurrency(totalPrice)}`}
       </GradientButton>
     </div>
   );
