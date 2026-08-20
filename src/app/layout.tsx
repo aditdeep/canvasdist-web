@@ -25,6 +25,15 @@ export const metadata: Metadata = {
   title: "Super OEY — Canvasing & Distribusi",
   description: "Platform keagenan, distribusi, dan tracking pengiriman produk.",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Super OEY",
+  },
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

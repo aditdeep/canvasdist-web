@@ -1,37 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import useSWR from "swr";
 import { LogOut, MapPin, Package, ShieldCheck, FileText, Save, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { GlassCard, GradientButton, GlassInput, GhostButton, Badge } from "@/components/ui";
-import { api, fetcher, formatCurrency, formatDateTime, ApiError } from "@/lib/api";
+import { GlassCard, GradientButton, GlassInput, GhostButton } from "@/components/ui";
+import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import type { Order, Paginated } from "@/types";
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Menunggu Konfirmasi",
-  approved: "Disetujui",
-  processing: "Diproses",
-  shipped: "Dikirim",
-  completed: "Selesai",
-  cancelled: "Dibatalkan",
-  returned: "Dikembalikan",
-};
-
-const STATUS_TONE: Record<string, "primary" | "success" | "warning" | "danger" | "neutral"> = {
-  pending: "warning",
-  approved: "primary",
-  processing: "primary",
-  shipped: "primary",
-  completed: "success",
-  cancelled: "danger",
-  returned: "danger",
-};
 
 export default function AkunPage() {
   const { user, logout, refreshUser, loading: authLoading } = useAuth();
-  const { data: orders, isLoading: ordersLoading } = useSWR<Paginated<Order>>(user ? "/orders" : null, fetcher);
 
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
@@ -132,36 +109,11 @@ export default function AkunPage() {
       </GlassCard>
 
       <GlassCard>
-        <div className="flex items-center gap-2 mb-4">
-          <Package size={16} className="text-[var(--color-primary-1)]" />
-          <h2 className="font-semibold text-sm">Riwayat Transaksi</h2>
-        </div>
-
-        {ordersLoading && <div className="h-20 rounded-xl bg-white/40 animate-pulse" />}
-
-        {!ordersLoading && (orders?.data.length ?? 0) === 0 && (
-          <p className="text-xs text-[var(--color-ink-faint)] text-center py-6">Belum ada transaksi.</p>
-        )}
-
-        {!ordersLoading && (orders?.data.length ?? 0) > 0 && (
-          <div className="space-y-2">
-            {orders!.data.map((order) => (
-              <div key={order.id} className="flex items-center justify-between rounded-xl bg-white/40 px-4 py-3">
-                <div>
-                  <p className="text-xs font-mono text-[var(--color-ink-soft)]">{order.order_no}</p>
-                  <p className="text-[11px] text-[var(--color-ink-faint)] mt-0.5">{formatDateTime(order.created_at)}</p>
-                </div>
-                <div className="text-right">
-                  <Badge tone={STATUS_TONE[order.status] ?? "neutral"}>{STATUS_LABEL[order.status] ?? order.status}</Badge>
-                  <p className="text-sm font-bold text-[var(--color-ink)] mt-1">{formatCurrency(order.total)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </GlassCard>
-
-      <GlassCard>
+        <Link href="/toko/pesanan" className="flex items-center gap-2 py-2 border-b border-white/60 text-sm text-[var(--color-ink)]">
+          <Package size={16} className="text-[var(--color-ink-soft)]" />
+          <span className="flex-1">Pesanan Saya</span>
+          <ChevronRight size={16} className="text-[var(--color-ink-faint)]" />
+        </Link>
         <Link href="/privacy-policy" className="flex items-center gap-2 py-2 border-b border-white/60 text-sm text-[var(--color-ink)]">
           <ShieldCheck size={16} className="text-[var(--color-ink-soft)]" />
           <span className="flex-1">Kebijakan Privasi</span>
