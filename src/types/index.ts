@@ -234,6 +234,18 @@ export type PaymentTransaction = {
   created_at: string;
 };
 
+export type Settings = {
+  id: number;
+  app_name: string;
+  logo_path: string | null;
+  owner_name: string | null;
+  owner_email: string | null;
+  owner_phone: string | null;
+  platform_fee_percent: string;
+  platform_owner_user_id: number | null;
+  platform_owner?: User;
+};
+
 export type Paginated<T> = {
   data: T[];
   current_page: number;

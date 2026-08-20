@@ -4,23 +4,31 @@ import Link from "next/link";
 import { ShoppingCart, User } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
+import { useBranding } from "@/lib/use-branding";
+import { imageUrl } from "@/lib/api";
 
 export function StoreNavbar() {
   const { totalItems } = useCart();
   const { user } = useAuth();
+  const branding = useBranding();
 
   return (
     <header className="sticky top-0 z-30 px-4 pt-4 lg:px-6">
       <div className="glass-strong flex items-center gap-3 px-4 py-3 max-w-6xl mx-auto">
         <Link href="/toko" className="flex items-center gap-2 shrink-0">
-          <span
-            className="w-9 h-9 rounded-xl grid place-items-center text-white font-bold text-sm"
-            style={{ background: "linear-gradient(135deg, var(--color-primary-1), var(--color-primary-2))" }}
-          >
-            C
-          </span>
+          {branding.logo_path ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageUrl(branding.logo_path) ?? undefined} alt={branding.app_name} className="w-9 h-9 rounded-xl object-contain" />
+          ) : (
+            <span
+              className="w-9 h-9 rounded-xl grid place-items-center text-white font-bold text-sm"
+              style={{ background: "linear-gradient(135deg, var(--color-primary-1), var(--color-primary-2))" }}
+            >
+              {branding.app_name.charAt(0).toUpperCase()}
+            </span>
+          )}
           <span className="font-[family-name:var(--font-manrope)] font-bold text-base hidden sm:inline">
-            CanvasDist
+            {branding.app_name}
           </span>
         </Link>
 

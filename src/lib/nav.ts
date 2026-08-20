@@ -17,6 +17,7 @@ import {
   Store,
   Map,
   Waypoints,
+  Settings,
 } from "lucide-react";
 
 export type NavItem = {
@@ -70,6 +71,10 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Laporan",
     items: [{ label: "Laporan", href: "/laporan", icon: FileBarChart, roles: ["super_admin", "wilayah", "agen"] }],
+  },
+  {
+    title: "Sistem",
+    items: [{ label: "Pengaturan", href: "/pengaturan", icon: Settings, roles: ["super_admin"] }],
   },
 ];
 

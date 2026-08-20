@@ -4,23 +4,31 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navGroupsForRole } from "@/lib/nav";
 import { useAuth } from "@/lib/auth-context";
+import { useBranding } from "@/lib/use-branding";
+import { imageUrl } from "@/lib/api";
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const branding = useBranding();
   const groups = navGroupsForRole(user?.role ?? "reseller");
 
   return (
     <aside className="hidden lg:flex flex-col w-[248px] shrink-0 h-screen sticky top-0 p-4">
       <div className="glass flex flex-col h-full p-4 overflow-hidden">
         <Link href="/dashboard" className="flex items-center gap-2 px-2 py-2 mb-4">
-          <span
-            className="w-8 h-8 rounded-lg grid place-items-center text-white font-bold text-sm shrink-0"
-            style={{ background: "linear-gradient(135deg, var(--color-primary-1), var(--color-primary-2))" }}
-          >
-            C
-          </span>
-          <span className="font-[family-name:var(--font-manrope)] font-bold text-[15px]">CanvasDist</span>
+          {branding.logo_path ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageUrl(branding.logo_path) ?? undefined} alt={branding.app_name} className="w-8 h-8 rounded-lg object-contain shrink-0" />
+          ) : (
+            <span
+              className="w-8 h-8 rounded-lg grid place-items-center text-white font-bold text-sm shrink-0"
+              style={{ background: "linear-gradient(135deg, var(--color-primary-1), var(--color-primary-2))" }}
+            >
+              {branding.app_name.charAt(0).toUpperCase()}
+            </span>
+          )}
+          <span className="font-[family-name:var(--font-manrope)] font-bold text-[15px] truncate">{branding.app_name}</span>
         </Link>
 
         <nav className="flex-1 overflow-y-auto pr-1 space-y-5">

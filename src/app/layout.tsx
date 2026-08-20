@@ -22,7 +22,7 @@ const jbmono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CanvasDist — Canvasing & Distribusi",
+  title: "Super OEY — Canvasing & Distribusi",
   description: "Platform keagenan, distribusi, dan tracking pengiriman produk.",
   manifest: "/manifest.json",
 };
