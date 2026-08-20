@@ -9,13 +9,14 @@ import { Modal } from "@/components/Modal";
 import { api, fetcher, formatCurrency, imageUrl, ApiError } from "@/lib/api";
 import { canWrite } from "@/lib/permissions";
 import { useAuth } from "@/lib/auth-context";
-import type { Paginated, Product } from "@/types";
+import type { Paginated, Product, Category } from "@/types";
 
-const EMPTY_FORM = { name: "", sku: "", category: "", unit: "pcs", base_price: "", description: "" };
+const EMPTY_FORM = { name: "", sku: "", category_id: "", unit: "pcs", base_price: "", description: "" };
 
 export default function ProdukPage() {
   const { user } = useAuth();
   const { data, error, isLoading, mutate } = useSWR<Paginated<Product>>("/products", fetcher);
+  const { data: categories } = useSWR<Paginated<Category>>("/categories", fetcher);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
@@ -41,7 +42,7 @@ export default function ProdukPage() {
     setForm({
       name: product.name,
       sku: product.sku,
-      category: product.category ?? "",
+      category_id: product.category_id ? String(product.category_id) : "",
       unit: product.unit,
       base_price: product.base_price,
       description: product.description ?? "",
@@ -66,7 +67,7 @@ export default function ProdukPage() {
       const formData = new FormData();
       formData.append("name", form.name);
       formData.append("sku", form.sku);
-      formData.append("category", form.category);
+      formData.append("category_id", form.category_id);
       formData.append("unit", form.unit);
       formData.append("base_price", form.base_price);
       formData.append("description", form.description);
@@ -135,7 +136,7 @@ export default function ProdukPage() {
               },
               { header: "Nama", render: (p) => <span className="font-medium">{p.name}</span> },
               { header: "SKU", render: (p) => <span className="font-[family-name:var(--font-jbmono)] text-xs">{p.sku}</span> },
-              { header: "Kategori", render: (p) => p.category || "-" },
+              { header: "Kategori", render: (p) => p.category_model?.name || p.category || "-" },
               { header: "Harga Dasar", render: (p) => formatCurrency(p.base_price) },
               { header: "Status", render: (p) => <Badge tone={p.is_active ? "success" : "neutral"}>{p.is_active ? "Aktif" : "Nonaktif"}</Badge> },
               canEdit
@@ -186,7 +187,25 @@ export default function ProdukPage() {
           </div>
           <div>
             <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Kategori</label>
-            <GlassInput value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+            <select
+              className="w-full rounded-xl bg-white/50 border border-white/70 px-4 py-3 text-sm outline-none focus:bg-white/80"
+              value={form.category_id}
+              onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+            >
+              <option value="">Tanpa kategori</option>
+              {categories?.data.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-[var(--color-ink-faint)] mt-1">
+              Belum ada kategori yang cocok?{" "}
+              <a href="/master-data/kategori" className="text-[var(--color-primary-1)]">
+                Tambah kategori baru
+              </a>{" "}
+              dulu (bisa sambil upload gambarnya).
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

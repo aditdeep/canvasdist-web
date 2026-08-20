@@ -26,6 +26,8 @@ export type Product = {
   name: string;
   sku: string;
   category: string | null;
+  category_id: number | null;
+  category_model?: { id: number; name: string } | null;
   unit: string;
   base_price: string;
   photo_path: string | null;
@@ -232,6 +234,24 @@ export type PaymentTransaction = {
   amount: string;
   status: "pending" | "success" | "failed" | "expired";
   created_at: string;
+};
+
+export type Category = {
+  id: number;
+  name: string;
+  image_path: string | null;
+  sort_order: number;
+  is_active: boolean;
+};
+
+export type Banner = {
+  id: number;
+  title: string;
+  subtitle: string | null;
+  image_path: string | null;
+  link_url: string | null;
+  sort_order: number;
+  is_active: boolean;
 };
 
 export type Settings = {

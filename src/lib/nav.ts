@@ -18,6 +18,7 @@ import {
   Map,
   Waypoints,
   Settings,
+  ImageIcon,
 } from "lucide-react";
 
 export type NavItem = {
@@ -42,6 +43,7 @@ export const NAV_GROUPS: NavGroup[] = [
     title: "Master Data",
     items: [
       { label: "Produk", href: "/master-data/produk", icon: Package, roles: ["super_admin", "wilayah", "agen", "sales", "reseller", "gudang"] },
+      { label: "Kategori", href: "/master-data/kategori", icon: ImageIcon, roles: ["super_admin", "wilayah", "agen"] },
       { label: "Outlet", href: "/master-data/outlet", icon: Store, roles: ["super_admin", "wilayah", "agen", "sales"] },
       { label: "Wilayah", href: "/master-data/wilayah", icon: Map, roles: ["super_admin", "wilayah"] },
       { label: "Hub", href: "/master-data/hub", icon: Waypoints, roles: ["super_admin", "wilayah", "agen", "gudang"] },
@@ -62,6 +64,7 @@ export const NAV_GROUPS: NavGroup[] = [
     title: "Program & Keuangan",
     items: [
       { label: "Promo & Reward", href: "/promo", icon: Tag, roles: ["super_admin", "wilayah", "agen"] },
+      { label: "Banner Hero", href: "/banner", icon: ImageIcon, roles: ["super_admin"] },
       { label: "Komisi Jaringan", href: "/komisi", icon: Network, roles: ["super_admin", "wilayah", "agen", "reseller"] },
       { label: "Saldo", href: "/saldo", icon: Wallet2 },
       { label: "Cashback Bekas", href: "/cashback-bekas", icon: Recycle, roles: ["super_admin", "wilayah", "agen", "sales", "gudang"] },

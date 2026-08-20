@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import useSWR from "swr";
-import { Tag, Truck, ShieldCheck } from "lucide-react";
+import { Tag, Truck, ShieldCheck, ImageIcon } from "lucide-react";
 import { HeroSlider } from "@/components/HeroSlider";
 import { ProductCard } from "@/components/ProductCard";
 import { GlassCard } from "@/components/ui";
-import { fetcher } from "@/lib/api";
-import type { Paginated, Product } from "@/types";
+import { fetcher, imageUrl } from "@/lib/api";
+import type { Category, Paginated, Product } from "@/types";
 
 const PERKS = [
   { icon: Truck, title: "Diantar atau Ambil Sendiri", desc: "Pilih cara terima sesuai kenyamananmu" },
@@ -16,20 +16,15 @@ const PERKS = [
 ];
 
 export default function StorefrontHomePage() {
-  const [category, setCategory] = useState<string | null>(null);
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const { data: categories } = useSWR<Category[]>("/public/categories", fetcher);
   const { data, isLoading } = useSWR<Paginated<Product>>(
-    `/public/products${category ? `?category=${encodeURIComponent(category)}` : ""}`,
+    `/public/products${categoryId ? `?category_id=${categoryId}` : ""}`,
     fetcher
   );
 
-  const { data: allProducts } = useSWR<Paginated<Product>>("/public/products", fetcher);
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    (allProducts?.data ?? []).forEach((p) => p.category && set.add(p.category));
-    return Array.from(set);
-  }, [allProducts]);
-
   const products = data?.data ?? [];
+  const activeCategoryName = categories?.find((c) => c.id === categoryId)?.name;
 
   return (
     <div>
@@ -49,33 +44,45 @@ export default function StorefrontHomePage() {
         ))}
       </div>
 
-      {categories.length > 0 && (
-        <div className="mb-6">
+      {categories && categories.length > 0 && (
+        <div className="mb-8">
           <h2 className="font-[family-name:var(--font-manrope)] font-bold text-lg mb-3">Kategori Produk</h2>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <button
-              onClick={() => setCategory(null)}
-              className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition ${
-                !category ? "text-white" : "glass-pill text-[var(--color-ink)]"
-              }`}
-              style={!category ? { background: "linear-gradient(135deg, var(--color-primary-1), var(--color-primary-2))" } : undefined}
-            >
-              Semua
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setCategory(cat)}
-                className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition ${
-                  category === cat ? "text-white" : "glass-pill text-[var(--color-ink)]"
+          <div className="flex gap-4 overflow-x-auto pb-1">
+            <button onClick={() => setCategoryId(null)} className="flex flex-col items-center gap-1.5 shrink-0">
+              <span
+                className={`w-16 h-16 rounded-full grid place-items-center transition ${
+                  !categoryId ? "text-white" : "glass-pill text-[var(--color-ink)]"
                 }`}
-                style={
-                  category === cat
-                    ? { background: "linear-gradient(135deg, var(--color-primary-1), var(--color-primary-2))" }
-                    : undefined
-                }
+                style={!categoryId ? { background: "linear-gradient(135deg, var(--color-primary-1), var(--color-primary-2))" } : undefined}
               >
-                {cat}
+                <ImageIcon size={22} />
+              </span>
+              <span className={`text-[11px] font-medium ${!categoryId ? "text-[var(--color-primary-1)]" : "text-[var(--color-ink-soft)]"}`}>
+                Semua
+              </span>
+            </button>
+
+            {categories.map((cat) => (
+              <button key={cat.id} onClick={() => setCategoryId(cat.id)} className="flex flex-col items-center gap-1.5 shrink-0">
+                <span
+                  className={`w-16 h-16 rounded-full overflow-hidden grid place-items-center transition ${
+                    categoryId === cat.id ? "ring-2 ring-[var(--color-primary-1)]" : "glass-pill"
+                  }`}
+                >
+                  {cat.image_path ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={imageUrl(cat.image_path) ?? undefined} alt={cat.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <ImageIcon size={20} className="text-[var(--color-ink-faint)]" />
+                  )}
+                </span>
+                <span
+                  className={`text-[11px] font-medium max-w-16 truncate ${
+                    categoryId === cat.id ? "text-[var(--color-primary-1)]" : "text-[var(--color-ink-soft)]"
+                  }`}
+                >
+                  {cat.name}
+                </span>
               </button>
             ))}
           </div>
@@ -83,7 +90,7 @@ export default function StorefrontHomePage() {
       )}
 
       <h2 className="font-[family-name:var(--font-manrope)] font-bold text-lg mb-3">
-        {category ?? "Semua Produk"}
+        {activeCategoryName ?? "Semua Produk"}
       </h2>
 
       {isLoading && (
