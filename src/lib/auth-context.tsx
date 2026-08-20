@@ -8,7 +8,7 @@ import type { User } from "@/types";
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, redirectTo?: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -33,11 +33,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  async function login(email: string, password: string) {
+  async function login(email: string, password: string, redirectTo?: string) {
     const res = await api.post<{ user: User; token: string }>("/auth/login", { email, password });
     setToken(res.token);
     setUser(res.user);
-    router.push("/dashboard");
+    router.push(redirectTo || (res.user.role === "customer" ? "/toko" : "/dashboard"));
   }
 
   async function logout() {

@@ -1,4 +1,4 @@
-export type Role = "super_admin" | "wilayah" | "agen" | "reseller" | "sales" | "gudang" | "kurir";
+export type Role = "super_admin" | "wilayah" | "agen" | "reseller" | "sales" | "gudang" | "kurir" | "customer";
 
 export type User = {
   id: number;
@@ -28,6 +28,9 @@ export type Product = {
   category: string | null;
   unit: string;
   base_price: string;
+  photo_path: string | null;
+  description: string | null;
+  display_price?: string;
   is_active: boolean;
 };
 

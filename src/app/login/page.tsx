@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { GlassCard, GlassInput, GradientButton } from "@/components/ui";
 import { MemberCard } from "@/components/MemberCard";
 import { Lock, Mail, AlertCircle } from "lucide-react";
 import { useAuth, ApiError } from "@/lib/auth-context";
 
-export default function LoginPage() {
+function LoginForm() {
   const { login } = useAuth();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || undefined;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
@@ -18,7 +22,7 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, redirect);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Gagal masuk, coba lagi.");
     } finally {
@@ -117,8 +121,23 @@ export default function LoginPage() {
               {loading ? "Memproses..." : "Masuk"}
             </GradientButton>
           </form>
+
+          <p className="text-center text-xs text-[var(--color-ink-soft)] mt-5">
+            Baru mau belanja?{" "}
+            <Link href="/daftar" className="text-[var(--color-primary-1)] font-semibold">
+              Daftar akun customer
+            </Link>
+          </p>
         </GlassCard>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
