@@ -9,7 +9,7 @@ import { Modal } from "@/components/Modal";
 import { PhotoCapture } from "@/components/PhotoCapture";
 import { api, fetcher, formatDateTime, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import type { Paginated, DeliveryOrder, Hub, User } from "@/types";
+import type { Paginated, DeliveryOrder, Hub, User, Order } from "@/types";
 
 const STATUS_LABEL: Record<DeliveryOrder["status"], string> = {
   siap_kirim: "Siap Kirim",
@@ -35,11 +35,21 @@ const NEXT_STATUS: Partial<Record<DeliveryOrder["status"], DeliveryOrder["status
 export default function PengirimanPage() {
   const { user } = useAuth();
   const { data, error, isLoading, mutate } = useSWR<Paginated<DeliveryOrder>>("/delivery-orders", fetcher);
+  const { data: approvedOrders, mutate: mutateOrders } = useSWR<Paginated<Order>>("/orders?status=approved", fetcher);
   const [routeTarget, setRouteTarget] = useState<DeliveryOrder | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   if (user?.role === "kurir") {
     return <KurirView data={data} error={error} isLoading={isLoading} mutate={mutate} />;
   }
+
+  // Order yang sudah disetujui, berjenis "Diantar" (bukan ambil sendiri), dan
+  // belum punya Surat Jalan — inilah yang bisa dibuatkan Surat Jalan baru.
+  // Order jenis "Ambil Sendiri" diselesaikan langsung dari halaman Order,
+  // tidak lewat sini.
+  const pendingDeliveryOrders = (approvedOrders?.data ?? []).filter(
+    (o) => o.fulfillment_type === "delivery" && !o.delivery_order
+  );
 
   async function advanceStatus(id: number, next: DeliveryOrder["status"]) {
     try {
@@ -54,16 +64,33 @@ export default function PengirimanPage() {
 
   return (
     <div className="max-w-5xl space-y-5">
-      <div>
-        <h1 className="font-[family-name:var(--font-manrope)] text-2xl font-bold">Pengiriman & Tracking</h1>
-        <p className="text-sm text-[var(--color-ink-soft)] mt-0.5">Surat Jalan dan status kirim tiap order.</p>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="font-[family-name:var(--font-manrope)] text-2xl font-bold">Pengiriman & Tracking</h1>
+          <p className="text-sm text-[var(--color-ink-soft)] mt-0.5">Surat Jalan dan status kirim tiap order.</p>
+        </div>
+        <GradientButton onClick={() => setCreateOpen(true)} className="shrink-0">
+          <Plus size={16} /> Buat Surat Jalan
+          {pendingDeliveryOrders.length > 0 && (
+            <span className="ml-1 bg-white/25 rounded-full px-1.5 text-xs">{pendingDeliveryOrders.length}</span>
+          )}
+        </GradientButton>
       </div>
+
+      {pendingDeliveryOrders.length > 0 && (
+        <GlassCard className="border-2 border-[var(--color-warning)]/40 bg-[var(--color-warning)]/5">
+          <p className="text-sm text-[var(--color-ink)]">
+            Ada <strong>{pendingDeliveryOrders.length} order</strong> sudah disetujui, jenis &quot;Diantar&quot;, dan menunggu
+            dibuatkan Surat Jalan. Klik <strong>Buat Surat Jalan</strong> di atas untuk memprosesnya.
+          </p>
+        </GlassCard>
+      )}
 
       <GlassCard>
         {isLoading && <LoadingRows />}
         {error && <ErrorState message="Gagal memuat data pengiriman." />}
         {!isLoading && !error && rows.length === 0 && (
-          <EmptyState icon={Truck} title="Belum ada Surat Jalan" description="Surat Jalan dibuat otomatis saat order di-approve dari gudang." />
+          <EmptyState icon={Truck} title="Belum ada Surat Jalan" description="Klik tombol Buat Surat Jalan di atas untuk memproses order yang sudah disetujui." />
         )}
         {!isLoading && rows.length > 0 && (
           <DataTable<DeliveryOrder>
@@ -116,7 +143,116 @@ export default function PengirimanPage() {
           }}
         />
       )}
+
+      <CreateDOModal
+        open={createOpen}
+        orders={pendingDeliveryOrders}
+        onClose={() => setCreateOpen(false)}
+        onSaved={() => {
+          setCreateOpen(false);
+          mutate();
+          mutateOrders();
+        }}
+      />
     </div>
+  );
+}
+
+/**
+ * Modal untuk membuat Surat Jalan (Delivery Order) baru dari sebuah order
+ * yang sudah disetujui & berjenis "Diantar". Ini langkah yang sebelumnya
+ * hilang dari alur — order approved tidak otomatis jadi Surat Jalan, harus
+ * dibuat manual di sini oleh Gudang/Agen/Admin.
+ */
+function CreateDOModal({
+  open,
+  orders,
+  onClose,
+  onSaved,
+}: {
+  open: boolean;
+  orders: Order[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { data: couriers } = useSWR<Paginated<User>>(open ? "/users?role=kurir" : null, fetcher);
+  const [orderId, setOrderId] = useState<number | "">("");
+  const [courierId, setCourierId] = useState<number | "">("");
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!orderId) return;
+    setSaving(true);
+    setFormError(null);
+    try {
+      await api.post("/delivery-orders", {
+        order_id: orderId,
+        courier_id: courierId || undefined,
+      });
+      setOrderId("");
+      setCourierId("");
+      onSaved();
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : "Gagal membuat Surat Jalan");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Buat Surat Jalan">
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {formError && <ErrorState message={formError} />}
+
+        {orders.length === 0 ? (
+          <p className="text-sm text-[var(--color-ink-soft)] py-4 text-center">
+            Tidak ada order yang menunggu Surat Jalan saat ini. Order harus berstatus &quot;Disetujui&quot; dan
+            bertipe &quot;Diantar&quot; dulu (bisa disetujui di menu Order).
+          </p>
+        ) : (
+          <>
+            <div>
+              <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Pilih Order</label>
+              <select
+                required
+                className="w-full rounded-xl bg-white/50 border border-white/70 px-4 py-3 text-sm outline-none focus:bg-white/80"
+                value={orderId}
+                onChange={(e) => setOrderId(Number(e.target.value))}
+              >
+                <option value="">Pilih order...</option>
+                {orders.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.order_no} — {o.outlet?.name ?? `Outlet #${o.outlet_id}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Tugaskan Kurir (opsional, bisa nanti)</label>
+              <select
+                className="w-full rounded-xl bg-white/50 border border-white/70 px-4 py-3 text-sm outline-none focus:bg-white/80"
+                value={courierId}
+                onChange={(e) => setCourierId(e.target.value ? Number(e.target.value) : "")}
+              >
+                <option value="">Belum ditugaskan</option>
+                {couriers?.data.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <GradientButton type="submit" className="w-full mt-2" disabled={saving || !orderId}>
+              {saving ? "Menyimpan..." : "Buat Surat Jalan"}
+            </GradientButton>
+          </>
+        )}
+      </form>
+    </Modal>
   );
 }
 

@@ -20,20 +20,46 @@ export default function DaftarPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [noAgentWarning, setNoAgentWarning] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const res = await api.post<{ user: User; token: string }>("/public/register", form);
+      const res = await api.post<{ user: User; token: string; agent_assigned: boolean }>("/public/register", form);
       setToken(res.token);
+      if (!res.agent_assigned) {
+        // Tidak ada agen aktif di wilayah ini — tetap lanjut, tapi kasih tau
+        // customer supaya nggak bingung kalau order-nya belakangan terlihat
+        // lebih lama diproses (perlu di-assign manual oleh admin).
+        setNoAgentWarning(true);
+        setLoading(false);
+        return;
+      }
       window.location.href = "/toko";
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Gagal mendaftar, coba lagi.");
-    } finally {
       setLoading(false);
     }
+  }
+
+  if (noAgentWarning) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-10">
+        <GlassCard strong className="w-full max-w-md p-7 sm:p-8 text-center">
+          <AlertCircle size={32} className="text-[var(--color-warning)] mx-auto mb-3" />
+          <h1 className="font-[family-name:var(--font-manrope)] text-lg font-bold mb-2">Akun Berhasil Dibuat</h1>
+          <p className="text-sm text-[var(--color-ink-soft)] mb-4">
+            Saat ini belum ada agen yang melayani wilayahmu secara otomatis. Kamu tetap bisa belanja seperti biasa —
+            pesananmu nanti akan diproses manual oleh tim kami sedikit lebih lama dari biasanya.
+          </p>
+          <GradientButton onClick={() => (window.location.href = "/toko")} className="w-full">
+            Lanjut ke Toko
+          </GradientButton>
+        </GlassCard>
+      </div>
+    );
   }
 
   return (

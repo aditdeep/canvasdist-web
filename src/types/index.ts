@@ -92,6 +92,7 @@ export type Order = {
   total: string;
   created_at: string;
   outlet?: Outlet;
+  agent?: { id: number; name: string } | null;
   items?: OrderItem[];
   delivery_order?: DeliveryOrder | null;
   payment_transactions?: PaymentTransaction[];

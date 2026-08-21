@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { ClipboardList, Check, Truck, Store, Package, MapPin } from "lucide-react";
+import { ClipboardList, Check, Truck, Store, Package, MapPin, AlertTriangle } from "lucide-react";
 import { GlassCard, GhostButton, GradientButton, Badge } from "@/components/ui";
 import { DataTable, EmptyState, LoadingRows, ErrorState } from "@/components/DataTable";
 import { Modal } from "@/components/Modal";
@@ -141,6 +141,24 @@ export default function OrderPage() {
               </Badge>
               {detail.is_storefront_order && <Badge tone="primary">Storefront</Badge>}
             </div>
+
+            {!detail.agent_id ? (
+              <div className="flex items-start gap-2 bg-[var(--color-danger)]/10 rounded-xl px-3 py-2.5">
+                <AlertTriangle size={16} className="text-[var(--color-danger)] mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-[var(--color-danger)]">Belum ada agen yang bertanggung jawab</p>
+                  <p className="text-[11px] text-[var(--color-ink-soft)] mt-0.5">
+                    Kemungkinan besar tidak ada agen aktif di wilayah customer ini saat mendaftar. Order tetap bisa
+                    diproses manual, tapi tidak akan menghasilkan komisi jaringan dan stok tidak otomatis terpotong
+                    dari gudang manapun.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-[var(--color-ink-soft)]">
+                Agen penanggung jawab: <span className="font-semibold text-[var(--color-ink)]">{detail.agent?.name ?? `#${detail.agent_id}`}</span>
+              </p>
+            )}
 
             <div>
               <p className="text-xs font-semibold text-[var(--color-ink-soft)] mb-2">Barang Dipesan</p>
