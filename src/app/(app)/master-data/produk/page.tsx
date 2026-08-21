@@ -22,14 +22,18 @@ export default function ProdukPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [tierPrices, setTierPrices] = useState({ wilayah: "", agen: "", reseller: "" });
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [priceSaving, setPriceSaving] = useState(false);
+  const [priceSuccess, setPriceSuccess] = useState(false);
 
   const canEdit = canWrite("produk", user?.role);
 
   function openCreate() {
     setEditing(null);
     setForm(EMPTY_FORM);
+    setTierPrices({ wilayah: "", agen: "", reseller: "" });
     setPhoto(null);
     setPhotoPreview(null);
     setFormError(null);
@@ -47,6 +51,13 @@ export default function ProdukPage() {
       base_price: product.base_price,
       description: product.description ?? "",
     });
+    const priceMap = Object.fromEntries((product.prices ?? []).map((p) => [p.level, p.price]));
+    setTierPrices({
+      wilayah: priceMap.wilayah ?? "",
+      agen: priceMap.agen ?? "",
+      reseller: priceMap.reseller ?? "",
+    });
+    setPriceSuccess(false);
     setPhoto(null);
     setPhotoPreview(product.photo_path);
     setFormError(null);
@@ -86,6 +97,28 @@ export default function ProdukPage() {
       setFormError(err instanceof ApiError ? err.message : "Gagal menyimpan produk");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSavePrices() {
+    if (!editing) return;
+    setPriceSaving(true);
+    setFormError(null);
+    setPriceSuccess(false);
+    try {
+      await api.put(`/products/${editing.id}/prices`, {
+        prices: [
+          { level: "wilayah", price: tierPrices.wilayah || null },
+          { level: "agen", price: tierPrices.agen || null },
+          { level: "reseller", price: tierPrices.reseller || null },
+        ],
+      });
+      setPriceSuccess(true);
+      mutate();
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : "Gagal menyimpan harga per level");
+    } finally {
+      setPriceSaving(false);
     }
   }
 
@@ -235,6 +268,61 @@ export default function ProdukPage() {
             {saving ? "Menyimpan..." : editing ? "Simpan Perubahan" : "Simpan Produk"}
           </GradientButton>
         </form>
+
+        {editing && (
+          <div className="mt-5 pt-5 border-t border-white/60">
+            <p className="text-xs font-semibold text-[var(--color-ink)] mb-1">Harga per Level (Opsional)</p>
+            <p className="text-[10px] text-[var(--color-ink-faint)] mb-3">
+              Set harga beda untuk tiap level kalau mau ada margin/untung riil, bukan cuma komisi persentase.
+              Kosongkan kalau mau pakai Harga Dasar untuk level itu.
+            </p>
+
+            {priceSuccess && (
+              <div className="rounded-xl bg-[var(--color-success)]/10 text-[var(--color-success)] text-xs px-3 py-2 mb-2">
+                Harga per level berhasil disimpan.
+              </div>
+            )}
+
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <div>
+                <label className="text-[11px] font-medium text-[var(--color-ink-soft)] mb-1 block">Wilayah</label>
+                <GlassInput
+                  type="number"
+                  placeholder={form.base_price}
+                  value={tierPrices.wilayah}
+                  onChange={(e) => setTierPrices({ ...tierPrices, wilayah: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-[var(--color-ink-soft)] mb-1 block">Agen</label>
+                <GlassInput
+                  type="number"
+                  placeholder={form.base_price}
+                  value={tierPrices.agen}
+                  onChange={(e) => setTierPrices({ ...tierPrices, agen: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-[var(--color-ink-soft)] mb-1 block">Reseller</label>
+                <GlassInput
+                  type="number"
+                  placeholder={form.base_price}
+                  value={tierPrices.reseller}
+                  onChange={(e) => setTierPrices({ ...tierPrices, reseller: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSavePrices}
+              disabled={priceSaving}
+              className="w-full rounded-xl glass-pill py-2.5 text-xs font-semibold text-[var(--color-ink)] hover:bg-white/80 transition disabled:opacity-50"
+            >
+              {priceSaving ? "Menyimpan..." : "Simpan Harga per Level"}
+            </button>
+          </div>
+        )}
       </Modal>
     </div>
   );

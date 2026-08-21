@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
-import { Plus, Users } from "lucide-react";
+import { Plus, Users, Truck } from "lucide-react";
 import { GlassCard, GradientButton, GlassInput, Badge } from "@/components/ui";
 import { DataTable, EmptyState, LoadingRows, ErrorState } from "@/components/DataTable";
 import { Modal } from "@/components/Modal";
@@ -30,25 +30,71 @@ const ROLE_TONE: Record<string, "primary" | "success" | "warning" | "danger" | "
   kurir: "neutral",
 };
 
+const EMPTY_CREATE_FORM = { name: "", email: "", phone: "", password: "", role: "sales" };
+const EMPTY_EDIT_FORM = {
+  name: "",
+  phone: "",
+  role: "sales",
+  is_active: true,
+  shipping_fee: "0",
+  courier_fee_flat: "0",
+  courier_fee_percent: "0",
+};
+
 export default function UserPage() {
   const { user: currentUser } = useAuth();
   const { data, error, isLoading, mutate } = useSWR<Paginated<User>>("/users", fetcher);
-  const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editing, setEditing] = useState<User | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", role: "sales" });
+  const [createForm, setCreateForm] = useState(EMPTY_CREATE_FORM);
+  const [editForm, setEditForm] = useState(EMPTY_EDIT_FORM);
 
-  async function handleSubmit(e: React.FormEvent) {
+  const canEdit = canWrite("user", currentUser?.role);
+
+  useEffect(() => {
+    if (editing) {
+      const e = editing as User & { shipping_fee?: string; courier_fee_flat?: string; courier_fee_percent?: string };
+      setEditForm({
+        name: e.name,
+        phone: e.phone ?? "",
+        role: e.role,
+        is_active: e.is_active,
+        shipping_fee: String(e.shipping_fee ?? "0"),
+        courier_fee_flat: String(e.courier_fee_flat ?? "0"),
+        courier_fee_percent: String(e.courier_fee_percent ?? "0"),
+      });
+    }
+  }, [editing]);
+
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setFormError(null);
     try {
-      await api.post("/users", form);
-      setOpen(false);
-      setForm({ name: "", email: "", phone: "", password: "", role: "sales" });
+      await api.post("/users", createForm);
+      setCreateOpen(false);
+      setCreateForm(EMPTY_CREATE_FORM);
       mutate();
     } catch (err) {
       setFormError(err instanceof ApiError ? err.message : "Gagal menyimpan user");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleUpdate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editing) return;
+    setSaving(true);
+    setFormError(null);
+    try {
+      await api.put(`/users/${editing.id}`, editForm);
+      setEditing(null);
+      mutate();
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : "Gagal menyimpan perubahan");
     } finally {
       setSaving(false);
     }
@@ -63,8 +109,8 @@ export default function UserPage() {
           <h1 className="font-[family-name:var(--font-manrope)] text-2xl font-bold">User</h1>
           <p className="text-sm text-[var(--color-ink-soft)] mt-0.5">Kelola akun agen, sales, gudang, dan kurir.</p>
         </div>
-        {canWrite("user", currentUser?.role) && (
-          <GradientButton onClick={() => setOpen(true)} className="shrink-0">
+        {canEdit && (
+          <GradientButton onClick={() => setCreateOpen(true)} className="shrink-0">
             <Plus size={16} /> Tambah
           </GradientButton>
         )}
@@ -79,6 +125,7 @@ export default function UserPage() {
         {!isLoading && rows.length > 0 && (
           <DataTable<User>
             rows={rows}
+            onRowClick={canEdit ? (u) => setEditing(u) : undefined}
             columns={[
               { header: "Nama", render: (u) => <span className="font-medium">{u.name}</span> },
               { header: "Email", render: (u) => <span className="text-xs">{u.email}</span> },
@@ -89,31 +136,31 @@ export default function UserPage() {
         )}
       </GlassCard>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Tambah User">
-        <form onSubmit={handleSubmit} className="space-y-3">
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Tambah User">
+        <form onSubmit={handleCreate} className="space-y-3">
           {formError && <ErrorState message={formError} />}
           <div>
             <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Nama Lengkap</label>
-            <GlassInput required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <GlassInput required value={createForm.name} onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} />
           </div>
           <div>
             <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Email</label>
-            <GlassInput type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <GlassInput type="email" required value={createForm.email} onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} />
           </div>
           <div>
             <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Telepon</label>
-            <GlassInput value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <GlassInput value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })} />
           </div>
           <div>
             <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Password</label>
-            <GlassInput type="password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+            <GlassInput type="password" required value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} />
           </div>
           <div>
             <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Role</label>
             <select
               className="w-full rounded-xl bg-white/50 border border-white/70 px-4 py-3 text-sm outline-none focus:bg-white/80"
-              value={form.role}
-              onChange={(e) => setForm({ ...form, role: e.target.value })}
+              value={createForm.role}
+              onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })}
             >
               {ROLE_OPTIONS.map((r) => (
                 <option key={r.value} value={r.value}>
@@ -124,6 +171,96 @@ export default function UserPage() {
           </div>
           <GradientButton type="submit" className="w-full mt-2" disabled={saving}>
             {saving ? "Menyimpan..." : "Simpan User"}
+          </GradientButton>
+        </form>
+      </Modal>
+
+      <Modal open={editing !== null} onClose={() => setEditing(null)} title={editing ? `Edit ${editing.name}` : "Edit User"}>
+        <form onSubmit={handleUpdate} className="space-y-3">
+          {formError && <ErrorState message={formError} />}
+          <div>
+            <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Nama Lengkap</label>
+            <GlassInput required value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Telepon</label>
+            <GlassInput value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-[var(--color-ink-soft)] mb-1.5 block">Role</label>
+            <select
+              className="w-full rounded-xl bg-white/50 border border-white/70 px-4 py-3 text-sm outline-none focus:bg-white/80"
+              value={editForm.role}
+              onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+            >
+              {ROLE_OPTIONS.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="is_active"
+              checked={editForm.is_active}
+              onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
+            />
+            <label htmlFor="is_active" className="text-xs text-[var(--color-ink-soft)]">
+              Akun aktif
+            </label>
+          </div>
+
+          {editForm.role === "agen" && (
+            <div className="bg-white/40 rounded-xl p-3 mt-2">
+              <p className="text-xs font-semibold text-[var(--color-ink)] mb-2 flex items-center gap-1.5">
+                <Truck size={13} /> Pengaturan Ongkir &amp; Kurir
+              </p>
+              <p className="text-[10px] text-[var(--color-ink-faint)] mb-2">
+                Fee kurir bisa nominal tetap, persentase dari ongkir, atau digabung keduanya. Kosongkan/0 untuk
+                menonaktifkan salah satu.
+              </p>
+              <div className="space-y-2">
+                <div>
+                  <label className="text-[11px] font-medium text-[var(--color-ink-soft)] mb-1 block">
+                    Ongkir yang dikenakan ke customer (Rp)
+                  </label>
+                  <GlassInput
+                    type="number"
+                    value={editForm.shipping_fee}
+                    onChange={(e) => setEditForm({ ...editForm, shipping_fee: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-medium text-[var(--color-ink-soft)] mb-1 block">
+                      Fee Kurir Tetap (Rp)
+                    </label>
+                    <GlassInput
+                      type="number"
+                      value={editForm.courier_fee_flat}
+                      onChange={(e) => setEditForm({ ...editForm, courier_fee_flat: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-medium text-[var(--color-ink-soft)] mb-1 block">
+                      Fee Kurir dari Ongkir (%)
+                    </label>
+                    <GlassInput
+                      type="number"
+                      step="0.1"
+                      value={editForm.courier_fee_percent}
+                      onChange={(e) => setEditForm({ ...editForm, courier_fee_percent: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <GradientButton type="submit" className="w-full mt-2" disabled={saving}>
+            {saving ? "Menyimpan..." : "Simpan Perubahan"}
           </GradientButton>
         </form>
       </Modal>

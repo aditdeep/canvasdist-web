@@ -13,6 +13,9 @@ export type User = {
   wallet?: Wallet;
   member_card?: MemberCard;
   outlet?: { id: number; address: string | null; name: string } | null;
+  shipping_fee?: string;
+  courier_fee_flat?: string;
+  courier_fee_percent?: string;
 };
 
 export type Region = {
@@ -38,6 +41,7 @@ export type Product = {
   promo_label?: string | null;
   shipping_fee?: string | null;
   is_active: boolean;
+  prices?: { id: number; level: "wilayah" | "agen" | "reseller"; price: string }[];
 };
 
 export type Outlet = {
