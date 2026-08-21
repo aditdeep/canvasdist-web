@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { ClipboardList, Check, Truck, Store, Package, MapPin, AlertTriangle } from "lucide-react";
+import { ClipboardList, Check, Truck, Store, Package, MapPin, AlertTriangle, ArrowRightLeft } from "lucide-react";
 import { GlassCard, GhostButton, GradientButton, Badge } from "@/components/ui";
 import { DataTable, EmptyState, LoadingRows, ErrorState } from "@/components/DataTable";
 import { Modal } from "@/components/Modal";
 import { api, fetcher, formatCurrency, formatDateTime } from "@/lib/api";
-import type { Paginated, Order, OrderStatus } from "@/types";
+import { useAuth } from "@/lib/auth-context";
+import type { Paginated, Order, OrderStatus, User } from "@/types";
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   pending: "Menunggu",
@@ -30,12 +31,32 @@ const STATUS_TONE: Record<OrderStatus, "primary" | "success" | "warning" | "dang
 };
 
 export default function OrderPage() {
+  const { user } = useAuth();
   const { data, error, isLoading, mutate } = useSWR<Paginated<Order>>("/orders", fetcher);
+  const { data: agents } = useSWR<Paginated<User>>("/users?role=agen", fetcher);
   const [detailId, setDetailId] = useState<number | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [reassignAgentId, setReassignAgentId] = useState("");
 
-  const { data: detail } = useSWR<Order>(detailId ? `/orders/${detailId}` : null, fetcher);
+  const canReassign = user?.role === "super_admin" || user?.role === "wilayah";
+  const { data: detail, mutate: mutateDetail } = useSWR<Order>(detailId ? `/orders/${detailId}` : null, fetcher);
+
+  async function handleReassign(id: number) {
+    if (!reassignAgentId) return;
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      await api.put(`/orders/${id}`, { agent_id: Number(reassignAgentId) });
+      mutate();
+      mutateDetail();
+      setReassignAgentId("");
+    } catch {
+      setActionError("Gagal memindahkan order ke agen lain.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
 
   async function handleApprove(id: number) {
     setActionLoading(true);
@@ -148,9 +169,9 @@ export default function OrderPage() {
                 <div>
                   <p className="text-xs font-semibold text-[var(--color-danger)]">Belum ada agen yang bertanggung jawab</p>
                   <p className="text-[11px] text-[var(--color-ink-soft)] mt-0.5">
-                    Kemungkinan besar tidak ada agen aktif di wilayah customer ini saat mendaftar. Order tetap bisa
-                    diproses manual, tapi tidak akan menghasilkan komisi jaringan dan stok tidak otomatis terpotong
-                    dari gudang manapun.
+                    Kemungkinan besar tidak ada agen dengan stok yang cukup untuk barang ini, atau tidak ada agen
+                    aktif di wilayah customer. Order tetap bisa diproses manual, tapi tidak akan menghasilkan
+                    komisi jaringan dan stok tidak otomatis terpotong dari gudang manapun.
                   </p>
                 </div>
               </div>
@@ -158,6 +179,41 @@ export default function OrderPage() {
               <p className="text-xs text-[var(--color-ink-soft)]">
                 Agen penanggung jawab: <span className="font-semibold text-[var(--color-ink)]">{detail.agent?.name ?? `#${detail.agent_id}`}</span>
               </p>
+            )}
+
+            {canReassign && detail.status !== "completed" && detail.status !== "cancelled" && (
+              <div className="bg-white/40 rounded-xl px-3 py-2.5">
+                <p className="text-[11px] font-semibold text-[var(--color-ink-soft)] mb-1.5 flex items-center gap-1.5">
+                  <ArrowRightLeft size={12} /> Pindahkan ke Agen Lain
+                </p>
+                <p className="text-[10px] text-[var(--color-ink-faint)] mb-2">
+                  Pastikan agen yang dipilih benar-benar punya stok barang ini di gudangnya, kalau tidak stok tidak
+                  akan otomatis terpotong saat di-approve.
+                </p>
+                <div className="flex gap-2">
+                  <select
+                    className="flex-1 rounded-lg bg-white/70 border border-white/80 px-3 py-2 text-xs outline-none"
+                    value={reassignAgentId}
+                    onChange={(e) => setReassignAgentId(e.target.value)}
+                  >
+                    <option value="">Pilih agen...</option>
+                    {agents?.data
+                      .filter((a) => a.id !== detail.agent_id)
+                      .map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                  </select>
+                  <GhostButton
+                    onClick={() => handleReassign(detail.id)}
+                    disabled={!reassignAgentId || actionLoading}
+                    className="!px-3 !py-2 text-xs shrink-0"
+                  >
+                    Pindahkan
+                  </GhostButton>
+                </div>
+              </div>
             )}
 
             <div>
